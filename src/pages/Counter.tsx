@@ -1294,13 +1294,13 @@ export default function Counter() {
           <div className="grid grid-cols-2 gap-3">
             <Button 
               variant="outline" 
-              className="border-2 border-black text-black font-bold py-6"
+              className="border-2 border-foreground text-foreground font-bold py-6"
               onClick={() => processPayment('cash')}
             >
               CASH
             </Button>
             <Button 
-              className="bg-[#c32148] hover:bg-[#c32148]/90 py-6 font-bold"
+              className="bg-[#c32148] hover:bg-[#c32148]/90 text-white py-6 font-bold"
               onClick={() => processPayment('fonepay')}
             >
               FONEPAY
