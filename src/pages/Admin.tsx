@@ -1806,6 +1806,23 @@ export default function Admin() {
                       />
                     </div>
 
+                    {/* Kitchen Fullscreen Mode */}
+                    <div className="flex items-center justify-between pt-4 border-t border-border">
+                      <div>
+                        <label className="text-sm font-medium">Kitchen Fullscreen Mode</label>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Larger fonts & simplified layout for wall displays.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={settings.kitchenFullscreenMode || false}
+                        onCheckedChange={(checked) => {
+                          updateSettings({ kitchenFullscreenMode: checked });
+                          toast.success(checked ? 'Fullscreen mode enabled' : 'Fullscreen mode disabled');
+                        }}
+                      />
+                    </div>
+
                     <div className="pt-4 border-t border-border">
                       <label className="text-sm font-medium">Kitchen Handles (Parallel Orders)</label>
                       <Input 

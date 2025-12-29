@@ -109,6 +109,7 @@ export interface Settings {
   kitchenHandles?: number; // Number of parallel orders kitchen can handle (default: 3)
   kotPrintingEnabled?: boolean; // Kitchen Order Ticket printing
   kdsEnabled?: boolean; // Kitchen Display System - if On, both Kitchen and Counter can accept orders
+  kitchenFullscreenMode?: boolean; // Fullscreen mode with larger fonts for wall-mounted displays
   // Point system settings
   pointSystemEnabled?: boolean;
   pointsPerRupee?: number;       // How many points earned per rupee spent (e.g., 1 point per 10 rupees = 0.1)
