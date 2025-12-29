@@ -1601,6 +1601,15 @@ export default function Admin() {
                       <Input value={settings.restaurantName || ''} onChange={e => updateSettings({ restaurantName: e.target.value })} />
                     </div>
                     <div>
+                      <label className="text-sm font-medium">Sub Name (optional)</label>
+                      <Input 
+                        value={settings.restaurantSubName || ''} 
+                        onChange={e => updateSettings({ restaurantSubName: e.target.value })} 
+                        placeholder="e.g., Digital Menu, Restaurant, Cafe"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Displayed after restaurant name in installed apps</p>
+                    </div>
+                    <div>
                       <label className="text-sm font-medium">Table Count</label>
                       <Input type="number" value={settings.tableCount || 10} onChange={e => updateSettings({ tableCount: parseInt(e.target.value) || 10 })} />
                     </div>

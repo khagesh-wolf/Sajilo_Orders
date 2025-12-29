@@ -67,6 +67,8 @@ export default function InstallCounter() {
   };
 
   const appName = settings.restaurantName || "Counter";
+  const appSubName = settings.restaurantSubName;
+  const fullAppName = appSubName ? `${appName} - ${appSubName}` : appName;
   const appLogo = settings.logo;
 
   if (isLoading) {
@@ -84,7 +86,7 @@ export default function InstallCounter() {
           <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
             <Loader2 className="w-10 h-10 text-emerald-400 animate-spin" />
           </div>
-          <h2 className="text-2xl font-bold mb-2">Installing {appName} Counter...</h2>
+          <h2 className="text-2xl font-bold mb-2">Installing {fullAppName} Counter...</h2>
           <p className="text-slate-400">Setting up your point-of-sale terminal.</p>
           <div className="mt-6 flex justify-center gap-1">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -103,7 +105,7 @@ export default function InstallCounter() {
           <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
             <CheckCircle2 className="w-10 h-10 text-emerald-400" />
           </div>
-          <h2 className="text-2xl font-bold mb-2">{appName} Counter Installed!</h2>
+          <h2 className="text-2xl font-bold mb-2">{fullAppName} Counter Installed!</h2>
           <p className="text-slate-400 mb-6">Your point-of-sale terminal is ready.</p>
           <Button 
             onClick={() => navigate('/counter')} 
@@ -132,7 +134,7 @@ export default function InstallCounter() {
             <Monitor className="w-12 h-12 text-white" />
           </div>
         )}
-        <h1 className="text-3xl font-bold">{appName}</h1>
+        <h1 className="text-3xl font-bold">{fullAppName}</h1>
         <p className="text-slate-400 mt-2">Counter Terminal</p>
       </div>
 
@@ -154,7 +156,7 @@ export default function InstallCounter() {
             size="lg"
           >
             <Download className="w-5 h-5 mr-2" />
-            Install {appName} Counter
+            Install {fullAppName} Counter
           </Button>
         ) : (
           <div className="space-y-4">

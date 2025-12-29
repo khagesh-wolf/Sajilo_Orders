@@ -93,6 +93,7 @@ export type StaffRole = 'admin' | 'counter' | 'waiter' | 'kitchen';
 
 export interface Settings {
   restaurantName: string;
+  restaurantSubName?: string; // Optional sub name like "Digital Menu", "Restaurant", etc.
   tableCount: number;
   wifiSSID: string;
   wifiPassword: string;

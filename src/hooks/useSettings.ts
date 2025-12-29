@@ -4,6 +4,7 @@ import { settingsApi } from '@/lib/apiClient';
 
 const defaultSettings: Settings = {
   restaurantName: 'Restaurant',
+  restaurantSubName: '',
   tableCount: 10,
   wifiSSID: '',
   wifiPassword: '',

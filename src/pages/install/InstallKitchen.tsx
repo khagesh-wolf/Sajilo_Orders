@@ -67,6 +67,8 @@ export default function InstallKitchen() {
   };
 
   const appName = settings.restaurantName || "Kitchen";
+  const appSubName = settings.restaurantSubName;
+  const fullAppName = appSubName ? `${appName} - ${appSubName}` : appName;
   const appLogo = settings.logo;
 
   if (isLoading) {
@@ -132,7 +134,7 @@ export default function InstallKitchen() {
             <ChefHat className="w-12 h-12 text-white" />
           </div>
         )}
-        <h1 className="text-3xl font-bold">{appName}</h1>
+        <h1 className="text-3xl font-bold">{fullAppName}</h1>
         <p className="text-slate-400 mt-2">Kitchen Display</p>
       </div>
 
