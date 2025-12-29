@@ -215,116 +215,138 @@ export default function Kitchen() {
     return Object.keys(groupedItems).sort((a, b) => (catOrder[a] || 999) - (catOrder[b] || 999));
   }, [groupedItems, categories]);
 
+  const isFullscreen = settings.kitchenFullscreenMode;
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="page-header px-4 sm:px-6 py-3 sm:py-4">
+    <div className={`min-h-screen bg-background ${isFullscreen ? 'p-2' : ''}`}>
+      {/* Header - Simplified in fullscreen mode */}
+      <header className={`page-header ${isFullscreen ? 'px-4 py-2' : 'px-4 sm:px-6 py-3 sm:py-4'}`}>
         <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-4">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 gradient-primary rounded-xl sm:rounded-2xl flex items-center justify-center shadow-warm">
-              <ChefHat className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+            <div className={`${isFullscreen ? 'w-14 h-14' : 'w-10 h-10 sm:w-12 sm:h-12'} gradient-primary rounded-xl sm:rounded-2xl flex items-center justify-center shadow-warm`}>
+              <ChefHat className={`${isFullscreen ? 'w-7 h-7' : 'w-5 h-5 sm:w-6 sm:h-6'} text-primary-foreground`} />
             </div>
             <div>
-              <h1 className="font-serif text-base sm:text-xl font-bold text-foreground">{settings.restaurantName}</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">Kitchen Display</p>
+              <h1 className={`font-serif font-bold text-foreground ${isFullscreen ? 'text-2xl' : 'text-base sm:text-xl'}`}>{settings.restaurantName}</h1>
+              <p className={`text-muted-foreground ${isFullscreen ? 'text-base' : 'text-xs sm:text-sm'}`}>Kitchen Display</p>
             </div>
           </div>
           
           <div className="flex items-center gap-2 ml-auto">
             {pendingCount > 0 && settings.kdsEnabled && (
-              <span className="pill bg-warning/15 text-warning border border-warning/20 animate-pulse-soft text-xs sm:text-sm">
-                <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className={`pill bg-warning/15 text-warning border border-warning/20 animate-pulse-soft ${isFullscreen ? 'text-lg px-4 py-2' : 'text-xs sm:text-sm'}`}>
+                <Clock className={`${isFullscreen ? 'w-5 h-5' : 'w-3 h-3 sm:w-3.5 sm:h-3.5'}`} />
                 {pendingCount} New
               </span>
             )}
             {preparingCount > 0 && (
-              <span className="pill bg-primary/15 text-primary border border-primary/20 text-xs sm:text-sm">
-                <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className={`pill bg-primary/15 text-primary border border-primary/20 ${isFullscreen ? 'text-lg px-4 py-2' : 'text-xs sm:text-sm'}`}>
+                <Flame className={`${isFullscreen ? 'w-5 h-5' : 'w-3 h-3 sm:w-3.5 sm:h-3.5'}`} />
                 {preparingCount}
               </span>
             )}
-            <span className="text-xs text-muted-foreground hidden lg:block">{formatNepalDateTime(new Date())}</span>
+            <span className={`text-muted-foreground hidden lg:block ${isFullscreen ? 'text-lg' : 'text-xs'}`}>{formatNepalDateTime(new Date())}</span>
             
-            <Button 
-              variant={soundEnabled ? "default" : "outline"}
-              size="icon"
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg"
-              onClick={() => {
-                setSoundEnabled(!soundEnabled);
-                toast.success(soundEnabled ? 'Sound alerts disabled' : 'Sound alerts enabled');
-              }}
-              title={soundEnabled ? "Disable sound" : "Enable sound"}
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon"
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg"
-              onClick={() => navigate('/counter')}
-              title="Go to Counter"
-            >
-              <MonitorDot className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg"
-              onClick={() => window.location.reload()}
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon"
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
+            {/* Hide most controls in fullscreen mode for cleaner display */}
+            {!isFullscreen && (
+              <>
+                <Button 
+                  variant={soundEnabled ? "default" : "outline"}
+                  size="icon"
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg"
+                  onClick={() => {
+                    setSoundEnabled(!soundEnabled);
+                    toast.success(soundEnabled ? 'Sound alerts disabled' : 'Sound alerts enabled');
+                  }}
+                  title={soundEnabled ? "Disable sound" : "Enable sound"}
+                >
+                  {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg"
+                  onClick={() => navigate('/counter')}
+                  title="Go to Counter"
+                >
+                  <MonitorDot className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg"
+                  onClick={() => window.location.reload()}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </>
+            )}
+            
+            {/* Simplified controls in fullscreen mode */}
+            {isFullscreen && (
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="h-12 w-12 rounded-lg"
+                onClick={() => window.location.reload()}
+              >
+                <RefreshCw className="w-6 h-6" />
+              </Button>
+            )}
           </div>
         </div>
       </header>
 
-      <div className="p-4 sm:p-6">
-        {/* View Mode & Filter Tabs */}
+      <div className={`${isFullscreen ? 'p-3' : 'p-4 sm:p-6'}`}>
+        {/* View Mode & Filter Tabs - Larger in fullscreen */}
         <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4 sm:mb-6">
-          {/* View Mode Selector */}
-          <div className="flex gap-2 bg-muted p-1 rounded-xl">
-            <button
-              onClick={() => setViewMode('orders')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                viewMode === 'orders' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <LayoutGrid className="w-4 h-4" /> Orders
-            </button>
-            <button
-              onClick={() => setViewMode('items')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                viewMode === 'items' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <List className="w-4 h-4" /> Items
-            </button>
-            <button
-              onClick={() => setViewMode('lanes')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                viewMode === 'lanes' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <ChefHat className="w-4 h-4" /> Lanes
-            </button>
-          </div>
+          {/* View Mode Selector - Hidden in fullscreen (always shows orders) */}
+          {!isFullscreen && (
+            <div className="flex gap-2 bg-muted p-1 rounded-xl">
+              <button
+                onClick={() => setViewMode('orders')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                  viewMode === 'orders' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4" /> Orders
+              </button>
+              <button
+                onClick={() => setViewMode('items')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                  viewMode === 'items' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <List className="w-4 h-4" /> Items
+              </button>
+              <button
+                onClick={() => setViewMode('lanes')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                  viewMode === 'lanes' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <ChefHat className="w-4 h-4" /> Lanes
+              </button>
+            </div>
+          )}
 
-          {/* Filter Tabs */}
-          {viewMode === 'orders' && (
-            <div className="flex gap-2 flex-wrap">
+          {/* Filter Tabs - Larger in fullscreen */}
+          {(viewMode === 'orders' || isFullscreen) && (
+            <div className={`flex gap-2 flex-wrap ${isFullscreen ? 'w-full justify-center' : ''}`}>
               <FilterTab 
                 label="All" 
                 count={activeOrders.length} 
                 active={filter === 'all'} 
-                onClick={() => setFilter('all')} 
+                onClick={() => setFilter('all')}
+                fullscreen={isFullscreen}
               />
               {settings.kdsEnabled && (
                 <FilterTab 
@@ -332,7 +354,8 @@ export default function Kitchen() {
                   count={pendingCount} 
                   active={filter === 'pending'} 
                   onClick={() => setFilter('pending')} 
-                  variant="warning" 
+                  variant="warning"
+                  fullscreen={isFullscreen}
                 />
               )}
               <FilterTab 
@@ -340,26 +363,32 @@ export default function Kitchen() {
                 count={acceptedCount + preparingCount} 
                 active={filter === 'accepted'} 
                 onClick={() => setFilter('accepted')} 
-                variant="default" 
+                variant="default"
+                fullscreen={isFullscreen}
               />
               <FilterTab 
                 label="Ready" 
                 count={readyCount} 
                 active={filter === 'ready'} 
                 onClick={() => setFilter('ready')} 
-                variant="success" 
+                variant="success"
+                fullscreen={isFullscreen}
               />
             </div>
           )}
         </div>
 
-        {/* Orders View */}
-        {viewMode === 'orders' && (
+        {/* Orders View - Always show in fullscreen mode */}
+        {(viewMode === 'orders' || isFullscreen) && (
           <>
             {filteredOrders.length === 0 ? (
-              <EmptyState />
+              <EmptyState fullscreen={isFullscreen} />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+              <div className={`grid gap-4 sm:gap-5 ${
+                isFullscreen 
+                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                  : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+              }`}>
                 {filteredOrders.map((order, index) => (
                   <div 
                     key={order.id} 
@@ -375,6 +404,7 @@ export default function Kitchen() {
                       formatTimer={formatTimer}
                       getAgeColor={getAgeColor}
                       kdsEnabled={settings.kdsEnabled || false}
+                      fullscreen={isFullscreen}
                     />
                   </div>
                 ))}
@@ -416,25 +446,28 @@ export default function Kitchen() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ fullscreen = false }: { fullscreen?: boolean }) {
   return (
-    <div className="bg-card rounded-2xl border border-border p-8 sm:p-16 text-center">
-      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
-        <Coffee className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground/50" />
+    <div className={`bg-card rounded-2xl border border-border text-center ${fullscreen ? 'p-12 sm:p-20' : 'p-8 sm:p-16'}`}>
+      <div className={`bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 ${fullscreen ? 'w-24 h-24' : 'w-16 h-16 sm:w-20 sm:h-20'}`}>
+        <Coffee className={`text-muted-foreground/50 ${fullscreen ? 'w-12 h-12' : 'w-8 h-8 sm:w-10 sm:h-10'}`} />
       </div>
-      <h3 className="font-serif text-xl sm:text-2xl font-semibold text-muted-foreground mb-2">No active orders</h3>
-      <p className="text-sm sm:text-base text-muted-foreground/70">New orders will appear here automatically</p>
+      <h3 className={`font-serif font-semibold text-muted-foreground mb-2 ${fullscreen ? 'text-3xl' : 'text-xl sm:text-2xl'}`}>No active orders</h3>
+      <p className={`text-muted-foreground/70 ${fullscreen ? 'text-xl' : 'text-sm sm:text-base'}`}>New orders will appear here automatically</p>
     </div>
   );
 }
 
 function FilterTab({ 
-  label, count, active, onClick, variant = 'default'
+  label, count, active, onClick, variant = 'default', fullscreen = false
 }: { 
   label: string; count: number; active: boolean; onClick: () => void;
   variant?: 'default' | 'warning' | 'success';
+  fullscreen?: boolean;
 }) {
-  const baseClasses = "px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all duration-200 flex items-center gap-1 sm:gap-2";
+  const baseClasses = fullscreen 
+    ? "px-6 py-3 rounded-xl font-bold text-lg transition-all duration-200 flex items-center gap-3"
+    : "px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all duration-200 flex items-center gap-1 sm:gap-2";
   
   const variantClasses = {
     default: active 
@@ -454,7 +487,7 @@ function FilterTab({
       className={`${baseClasses} ${variantClasses[variant]}`}
     >
       {label}
-      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${active ? 'bg-white/20' : 'bg-background/60'}`}>
+      <span className={`rounded-full font-bold ${active ? 'bg-white/20' : 'bg-background/60'} ${fullscreen ? 'px-3 py-1 text-base' : 'px-2 py-0.5 text-xs'}`}>
         {count}
       </span>
     </button>
@@ -469,7 +502,8 @@ function OrderCard({
   orderAge,
   formatTimer,
   getAgeColor,
-  kdsEnabled
+  kdsEnabled,
+  fullscreen = false
 }: { 
   order: Order; 
   onStatusChange: (order: Order, status: OrderStatus) => void;
@@ -479,6 +513,7 @@ function OrderCard({
   formatTimer: (seconds: number) => string;
   getAgeColor: (age: number) => string;
   kdsEnabled: boolean;
+  fullscreen?: boolean;
 }) {
   const isPending = order.status === 'pending';
   const isRush = order.priority === 'rush';
@@ -497,26 +532,26 @@ function OrderCard({
       'border-border'
     }`}>
       {/* Header */}
-      <div className={`p-4 sm:p-5 border-b border-border ${
+      <div className={`${fullscreen ? 'p-6' : 'p-4 sm:p-5'} border-b border-border ${
         isPending ? 'bg-warning/10' : isRush ? 'bg-destructive/10' : isReady ? 'bg-success/10' : ''
       }`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+            <div className={`rounded-xl flex items-center justify-center ${
               isPending ? 'bg-warning/20' : isReady ? 'bg-success/20' : 'bg-muted'
-            }`}>
+            } ${fullscreen ? 'w-14 h-14' : 'w-10 h-10'}`}>
               {isPending ? (
-                <Clock className="w-5 h-5 text-warning" />
+                <Clock className={`text-warning ${fullscreen ? 'w-7 h-7' : 'w-5 h-5'}`} />
               ) : isReady ? (
-                <CheckCircle className="w-5 h-5 text-success" />
+                <CheckCircle className={`text-success ${fullscreen ? 'w-7 h-7' : 'w-5 h-5'}`} />
               ) : (
-                <ChefHat className="w-5 h-5 text-primary" />
+                <ChefHat className={`text-primary ${fullscreen ? 'w-7 h-7' : 'w-5 h-5'}`} />
               )}
             </div>
             <div>
-              <span className="font-serif text-xl font-bold">Table {order.tableNumber}</span>
+              <span className={`font-serif font-bold ${fullscreen ? 'text-3xl' : 'text-xl'}`}>Table {order.tableNumber}</span>
               {isRush && (
-                <span className="ml-2 px-2 py-0.5 bg-destructive text-destructive-foreground text-xs rounded-full animate-pulse">
+                <span className={`ml-2 px-2 py-0.5 bg-destructive text-destructive-foreground rounded-full animate-pulse ${fullscreen ? 'text-sm' : 'text-xs'}`}>
                   RUSH
                 </span>
               )}
@@ -524,25 +559,28 @@ function OrderCard({
           </div>
           
           {/* Timer */}
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${getAgeColor(orderAge)}`}>
-            <Timer className="w-3.5 h-3.5" />
+          <div className={`flex items-center gap-1.5 rounded-lg font-bold ${getAgeColor(orderAge)} ${fullscreen ? 'px-4 py-2 text-lg' : 'px-2.5 py-1 text-xs'}`}>
+            <Timer className={fullscreen ? 'w-5 h-5' : 'w-3.5 h-3.5'} />
             {formatTimer(orderAge)}
           </div>
         </div>
         
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{order.isWaiterOrder ? `Waiter Order` : order.customerPhone}</span>
-          <StatusBadge status={order.status} />
-        </div>
+        {/* Hide customer info in fullscreen for cleaner display */}
+        {!fullscreen && (
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>{order.isWaiterOrder ? `Waiter Order` : order.customerPhone}</span>
+            <StatusBadge status={order.status} />
+          </div>
+        )}
 
         {/* Progress bar */}
         {!isPending && !isReady && totalItems > 1 && (
-          <div className="mt-3">
-            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+          <div className={fullscreen ? 'mt-4' : 'mt-3'}>
+            <div className={`flex justify-between text-muted-foreground mb-1 ${fullscreen ? 'text-base' : 'text-xs'}`}>
               <span>Progress</span>
               <span>{completedItems}/{totalItems} items</span>
             </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div className={`bg-muted rounded-full overflow-hidden ${fullscreen ? 'h-3' : 'h-2'}`}>
               <div 
                 className="h-full bg-success transition-all duration-300"
                 style={{ width: `${(completedItems / totalItems) * 100}%` }}
@@ -553,28 +591,28 @@ function OrderCard({
       </div>
 
       {/* Items with per-item controls */}
-      <div className="p-4 sm:p-5 space-y-2">
+      <div className={`space-y-2 ${fullscreen ? 'p-6' : 'p-4 sm:p-5'}`}>
         {order.items.map((item) => {
           const itemReady = item.status === 'ready' || (item.completedQty || 0) >= item.qty;
           return (
             <div 
               key={item.id} 
-              className={`flex justify-between items-center p-2 rounded-lg transition-all ${
+              className={`flex justify-between items-center rounded-lg transition-all ${
                 itemReady ? 'bg-success/10 line-through opacity-60' : 'bg-muted/50'
-              }`}
+              } ${fullscreen ? 'p-4' : 'p-2'}`}
             >
-              <span className="font-medium flex items-center gap-2">
-                <span className="text-primary font-bold text-lg">{item.qty}×</span>
+              <span className={`font-medium flex items-center gap-2 ${fullscreen ? 'text-xl' : ''}`}>
+                <span className={`text-primary font-bold ${fullscreen ? 'text-2xl' : 'text-lg'}`}>{item.qty}×</span>
                 {item.name}
               </span>
               {itemReady ? (
-                <span className="h-8 w-8 flex items-center justify-center text-success">
-                  <Check className="w-5 h-5" />
+                <span className={`flex items-center justify-center text-success ${fullscreen ? 'h-12 w-12' : 'h-8 w-8'}`}>
+                  <Check className={fullscreen ? 'w-7 h-7' : 'w-5 h-5'} />
                 </span>
               ) : (
                 <Button
-                  size="sm"
-                  className="h-8 bg-success hover:bg-success/90 text-success-foreground"
+                  size={fullscreen ? "lg" : "sm"}
+                  className={`bg-success hover:bg-success/90 text-success-foreground ${fullscreen ? 'h-12 text-lg px-6' : 'h-8'}`}
                   onClick={() => {
                     onItemStatusChange(order.id, item.id, 'ready', item.qty);
                     toast.success(`${item.name} marked ready`);
@@ -588,64 +626,67 @@ function OrderCard({
         })}
         
         {order.notes && (
-          <div className="bg-warning/10 rounded-xl p-3 mt-3 border border-warning/20">
-            <p className="text-xs font-medium text-warning flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5" /> Notes
+          <div className={`bg-warning/10 rounded-xl border border-warning/20 ${fullscreen ? 'p-4 mt-4' : 'p-3 mt-3'}`}>
+            <p className={`font-medium text-warning flex items-center gap-1 ${fullscreen ? 'text-base' : 'text-xs'}`}>
+              <AlertTriangle className={fullscreen ? 'w-5 h-5' : 'w-3.5 h-3.5'} /> Notes
             </p>
-            <p className="text-sm text-foreground mt-1">{order.notes}</p>
+            <p className={`text-foreground mt-1 ${fullscreen ? 'text-lg' : 'text-sm'}`}>{order.notes}</p>
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div className="p-4 sm:p-5 pt-0 flex gap-2">
+      <div className={`pt-0 flex gap-2 ${fullscreen ? 'p-6' : 'p-4 sm:p-5'}`}>
         {isPending && kdsEnabled && (
           <>
             <Button 
-              size="sm" 
-              className="flex-1 bg-success hover:bg-success/90 text-success-foreground rounded-xl h-11"
+              size={fullscreen ? "lg" : "sm"}
+              className={`flex-1 bg-success hover:bg-success/90 text-success-foreground rounded-xl ${fullscreen ? 'h-14 text-lg' : 'h-11'}`}
               onClick={() => onStatusChange(order, 'accepted')}
             >
-              <Check className="w-4 h-4 mr-2" /> Accept
+              <Check className={fullscreen ? 'w-6 h-6 mr-2' : 'w-4 h-4 mr-2'} /> Accept
             </Button>
             <Button 
-              size="sm" 
+              size={fullscreen ? "lg" : "sm"}
               variant="destructive"
-              className="rounded-xl h-11"
+              className={`rounded-xl ${fullscreen ? 'h-14 px-6' : 'h-11'}`}
               onClick={() => onStatusChange(order, 'cancelled')}
             >
-              <X className="w-4 h-4" />
+              <X className={fullscreen ? 'w-6 h-6' : 'w-4 h-4'} />
             </Button>
           </>
         )}
         
         {!isPending && !isReady && (
           <Button 
-            size="sm" 
-            className={`w-full rounded-xl h-11 ${
+            size={fullscreen ? "lg" : "sm"}
+            className={`w-full rounded-xl ${fullscreen ? 'h-14 text-lg' : 'h-11'} ${
               allItemsReady 
                 ? 'bg-success hover:bg-success/90 text-success-foreground' 
                 : 'gradient-primary text-primary-foreground'
             }`}
             onClick={() => onStatusChange(order, 'ready')}
           >
-            <CheckCircle className="w-4 h-4 mr-2" />
+            <CheckCircle className={fullscreen ? 'w-6 h-6 mr-2' : 'w-4 h-4 mr-2'} />
             {allItemsReady ? 'Order Ready!' : 'Mark All Ready'}
           </Button>
         )}
 
         {isReady && (
-          <div className="w-full text-center py-3 bg-success/15 rounded-xl text-success font-bold flex items-center justify-center gap-2">
-            <CheckCircle className="w-5 h-5" />
+          <div className={`w-full text-center bg-success/15 rounded-xl text-success font-bold flex items-center justify-center gap-2 ${fullscreen ? 'py-4 text-xl' : 'py-3'}`}>
+            <CheckCircle className={fullscreen ? 'w-7 h-7' : 'w-5 h-5'} />
             Ready for Pickup!
           </div>
         )}
       </div>
 
-      <div className="px-4 sm:px-5 pb-4 text-xs text-muted-foreground/50 flex justify-between">
-        <span>ID: #{order.id.slice(-6)}</span>
-        <span>{formatNepalTime(order.createdAt)}</span>
-      </div>
+      {/* Hide ID footer in fullscreen */}
+      {!fullscreen && (
+        <div className="px-4 sm:px-5 pb-4 text-xs text-muted-foreground/50 flex justify-between">
+          <span>ID: #{order.id.slice(-6)}</span>
+          <span>{formatNepalTime(order.createdAt)}</span>
+        </div>
+      )}
     </div>
   );
 }
