@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useStore } from "@/store/useStore";
 import { Download, Monitor, CheckCircle2, Loader2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -12,6 +13,7 @@ function isPWA(): boolean {
 
 export default function InstallCounter() {
   const navigate = useNavigate();
+  const { settings } = useStore();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
@@ -108,10 +110,18 @@ export default function InstallCounter() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-white">
       <div className="text-center mb-8">
-        <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-emerald-500/30">
-          <Monitor className="w-12 h-12 text-white" />
-        </div>
-        <h1 className="text-3xl font-bold">Counter Terminal</h1>
+        {settings.logo ? (
+          <img
+            src={settings.logo}
+            alt={settings.restaurantName}
+            className="w-24 h-24 rounded-2xl object-cover mx-auto mb-6 shadow-2xl shadow-emerald-500/30"
+          />
+        ) : (
+          <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-emerald-500/30">
+            <Monitor className="w-12 h-12 text-white" />
+          </div>
+        )}
+        <h1 className="text-3xl font-bold">{settings.restaurantName || "Counter Terminal"}</h1>
         <p className="text-slate-400 mt-2">Point of Sale System</p>
       </div>
 
