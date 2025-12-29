@@ -23,8 +23,12 @@ export default function Auth() {
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated && currentUser) {
-      // Counter users go to admin if counterAsAdmin is enabled
-      if (currentUser.role === 'admin' || settings.counterAsAdmin) {
+      // Redirect based on role
+      if (currentUser.role === 'waiter') {
+        navigate('/waiter');
+      } else if (currentUser.role === 'kitchen') {
+        navigate('/kitchen');
+      } else if (currentUser.role === 'admin' || settings.counterAsAdmin) {
         navigate('/admin');
       } else {
         navigate('/counter');
@@ -65,8 +69,12 @@ export default function Auth() {
       toast.success('Login successful!');
       const user = useStore.getState().currentUser;
       const currentSettings = useStore.getState().settings;
-      // Counter users go to admin if counterAsAdmin is enabled
-      if (user?.role === 'admin' || currentSettings.counterAsAdmin) {
+      // Redirect based on role
+      if (user?.role === 'waiter') {
+        navigate('/waiter');
+      } else if (user?.role === 'kitchen') {
+        navigate('/kitchen');
+      } else if (user?.role === 'admin' || currentSettings.counterAsAdmin) {
         navigate('/admin');
       } else {
         navigate('/counter');
