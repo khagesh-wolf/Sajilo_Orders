@@ -7,9 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Package, AlertTriangle, Settings2, Trash2, DollarSign, Pencil, X, Layers } from 'lucide-react';
+import { Plus, Package, AlertTriangle, Settings2, Trash2, DollarSign, Pencil, X, Layers, History, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
-import { InventoryUnitType, MenuItem, InventoryItem } from '@/types';
+import { InventoryUnitType, MenuItem, InventoryItem, InventoryTransaction } from '@/types';
+import { format } from 'date-fns';
 import { PortionPriceEditor } from './PortionPriceEditor';
 
 const UNIT_OPTIONS: { value: InventoryUnitType; label: string }[] = [
@@ -40,11 +41,24 @@ const DEFAULT_BOTTLE_SIZES = [180, 375, 750, 1000];
 
 export function InventoryManager() {
   const { 
-    menuItems, inventoryItems, portionOptions, lowStockItems,
+    menuItems, inventoryItems, portionOptions, lowStockItems, inventoryTransactions,
     addInventoryItem, updateInventoryItem, deleteInventoryItem,
     addStock, addPortionOption, deletePortionOption, getInventoryByMenuItemId,
     getPortionsByItem
   } = useStore();
+
+  // Helper to get menu item name from inventory item ID
+  const getMenuItemName = (inventoryItemId: string): string => {
+    const invItem = inventoryItems.find(ii => ii.id === inventoryItemId);
+    if (!invItem) return 'Unknown';
+    const menuItem = menuItems.find(m => m.id === invItem.menuItemId);
+    return menuItem?.name || 'Unknown';
+  };
+
+  // Sort transactions by date (newest first)
+  const sortedTransactions = [...inventoryTransactions].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
   const [activeTab, setActiveTab] = useState('stock');
   const [showAddItemModal, setShowAddItemModal] = useState(false);
@@ -206,9 +220,10 @@ export function InventoryManager() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 w-full max-w-md">
+        <TabsList className="grid grid-cols-4 w-full max-w-lg">
           <TabsTrigger value="stock">Stock Entry</TabsTrigger>
           <TabsTrigger value="items">Inventory</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -348,6 +363,76 @@ export function InventoryManager() {
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* History Tab */}
+        <TabsContent value="history" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <History className="w-5 h-5" />
+              Stock History
+            </h3>
+            <Badge variant="outline">{sortedTransactions.length} entries</Badge>
+          </div>
+
+          {sortedTransactions.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                <History className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No stock transactions yet.</p>
+                <p className="text-sm">Add stock to see history here.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {sortedTransactions.map((tx) => {
+                const isPositive = tx.transactionType === 'receive';
+                const typeLabels: Record<string, string> = {
+                  receive: 'Stock Added',
+                  sale: 'Sale',
+                  adjustment: 'Adjustment',
+                  waste: 'Waste',
+                };
+                
+                return (
+                  <Card key={tx.id}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-full ${isPositive ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                            {isPositive ? (
+                              <ArrowUp className="w-4 h-4 text-green-500" />
+                            ) : (
+                              <ArrowDown className="w-4 h-4 text-red-500" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{getMenuItemName(tx.inventoryItemId)}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant={isPositive ? 'default' : 'secondary'} className="text-xs">
+                                {typeLabels[tx.transactionType] || tx.transactionType}
+                              </Badge>
+                              <span className="text-sm text-muted-foreground">
+                                {format(new Date(tx.createdAt), 'MMM dd, yyyy • hh:mm a')}
+                              </span>
+                            </div>
+                            {tx.notes && (
+                              <p className="text-sm text-muted-foreground mt-1">{tx.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={`text-lg font-bold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                            {isPositive ? '+' : '-'}{Math.abs(tx.quantity)} {tx.unit}
+                          </span>
                         </div>
                       </div>
                     </CardContent>
