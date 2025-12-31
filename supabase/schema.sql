@@ -492,8 +492,10 @@ CREATE TABLE IF NOT EXISTS portion_options (
   name TEXT NOT NULL,
   -- Size in base units (ml, pcs, etc.)
   size DECIMAL(10,2) NOT NULL,
-  -- Price multiplier (1.0 = base price, 2.0 = double price)
+  -- Price multiplier (1.0 = base price, 2.0 = double price) - legacy, use fixed_price instead
   price_multiplier DECIMAL(5,2) NOT NULL DEFAULT 1.0,
+  -- Fixed price for this portion (overrides multiplier when set)
+  fixed_price DECIMAL(10,2) DEFAULT NULL,
   sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -7,9 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Package, AlertTriangle, TrendingDown, Settings2, Trash2 } from 'lucide-react';
+import { Plus, Package, AlertTriangle, TrendingDown, Settings2, Trash2, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { InventoryUnitType } from '@/types';
+import { CategoryPriceEditor } from './PortionPriceEditor';
 
 const UNIT_OPTIONS: { value: InventoryUnitType; label: string }[] = [
   { value: 'ml', label: 'Milliliters (ml)' },
@@ -52,6 +53,7 @@ export function InventoryManager() {
   const [stockMenuItemId, setStockMenuItemId] = useState('');
   const [stockQuantity, setStockQuantity] = useState('');
   const [stockNotes, setStockNotes] = useState('');
+  const [priceEditorCategoryId, setPriceEditorCategoryId] = useState<string | null>(null);
 
   // Categories with inventory tracking
   const trackedCategories = categories.filter(c => 
@@ -325,14 +327,23 @@ export function InventoryManager() {
                           <div className="flex flex-wrap gap-1 mt-2">
                             {portions.map(p => (
                               <Badge key={p.id} variant="secondary" className="text-xs">
-                                {p.name}
+                                {p.name} {p.fixedPrice ? `- Rs ${p.fixedPrice}` : ''}
                               </Badge>
                             ))}
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => handleRemoveCategory(cat.id)}>
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setPriceEditorCategoryId(cat.id)}
+                          >
+                            <DollarSign className="w-4 h-4 mr-1" /> Set Prices
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleRemoveCategory(cat.id)}>
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -430,6 +441,16 @@ export function InventoryManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Category Price Editor */}
+      {priceEditorCategoryId && (
+        <CategoryPriceEditor
+          categoryId={priceEditorCategoryId}
+          categoryName={categories.find(c => c.id === priceEditorCategoryId)?.name || ''}
+          open={true}
+          onClose={() => setPriceEditorCategoryId(null)}
+        />
+      )}
     </div>
   );
 }

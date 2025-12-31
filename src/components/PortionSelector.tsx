@@ -13,17 +13,17 @@ interface PortionSelectorProps {
 }
 
 export function PortionSelector({ item, open, onClose, onSelect }: PortionSelectorProps) {
-  const { getPortionsByCategory, menuItems } = useStore();
+  const { getPortionsByCategory } = useStore();
   const portions = getPortionsByCategory(item.category);
   
-  // Calculate price for each portion based on base price and multiplier
-  // Base price is typically for the smallest portion (30ml = 0.5x multiplier)
+  // Get price for portion - use fixed price if set, otherwise calculate from multiplier
   const getPortionPrice = (portion: PortionOption): number => {
-    // Find the base multiplier (smallest portion)
+    if (portion.fixedPrice != null) {
+      return portion.fixedPrice;
+    }
+    // Fallback to multiplier-based calculation
     const baseMultiplier = Math.min(...portions.map(p => p.priceMultiplier));
-    // Calculate base unit price
     const baseUnitPrice = item.price / baseMultiplier;
-    // Calculate price for this portion
     return Math.round(baseUnitPrice * portion.priceMultiplier);
   };
 

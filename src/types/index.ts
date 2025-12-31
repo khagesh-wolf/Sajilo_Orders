@@ -199,6 +199,7 @@ export interface PortionOption {
   name: string;
   size: number;
   priceMultiplier: number;
+  fixedPrice?: number; // Fixed price for this portion (overrides multiplier if set)
   sortOrder: number;
   createdAt: string;
 }

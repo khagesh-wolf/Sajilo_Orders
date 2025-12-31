@@ -841,6 +841,7 @@ const mapPortionOptionFromDb = (row: any) => ({
   name: row.name,
   size: Number(row.size),
   priceMultiplier: Number(row.price_multiplier ?? 1),
+  fixedPrice: row.fixed_price != null ? Number(row.fixed_price) : undefined,
   sortOrder: row.sort_order ?? 0,
   createdAt: row.created_at,
 });
@@ -851,6 +852,7 @@ const mapPortionOptionToDb = (item: any) => ({
   name: item.name,
   size: item.size,
   price_multiplier: item.priceMultiplier ?? 1,
+  fixed_price: item.fixedPrice ?? null,
   sort_order: item.sortOrder ?? 0,
 });
 
