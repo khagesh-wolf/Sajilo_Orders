@@ -13,7 +13,7 @@ import {
   UtensilsCrossed, Users, QrCode, History, TrendingUp, ShoppingBag, DollarSign,
   Download, Search, Eye, UserCog, BarChart3, Calendar, Image as ImageIcon, ToggleLeft, ToggleRight,
   Check, X, Menu as MenuIcon, MonitorDot, GripVertical, Upload, Loader2, Shield, Pencil,
-  Sun, Moon, ChefHat, Package
+  Sun, Moon, ChefHat, Package, Database, AlertTriangle, HardDrive
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { Textarea } from '@/components/ui/textarea';
@@ -40,6 +40,15 @@ import {
 import { uploadToR2 } from '@/lib/r2Client';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { InventoryManager } from '@/components/InventoryManager';
+import { 
+  exportDatabase, 
+  parseBackupFile, 
+  getBackupStats, 
+  getLastBackupDate,
+  dismissBackupReminder,
+  BackupData 
+} from '@/lib/databaseBackup';
+import { useBackupReminder } from '@/hooks/useBackupReminder';
 
 const COLORS = ['#06C167', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
@@ -60,7 +69,11 @@ export default function Admin() {
     customers, transactions, staff, settings, updateSettings,
     addStaff, updateStaff, deleteStaff, expenses,
     isAuthenticated, currentUser, logout, getTodayStats,
-    updateCustomerPhone
+    updateCustomerPhone,
+    // For backup/restore
+    orders, bills, waiterCalls, inventoryItems,
+    setCategories, setMenuItems, setOrders, setBills, setTransactions,
+    setCustomers, setStaff, setExpenses, setWaiterCalls, setInventoryItems
   } = useStore();
 
   // Subscription status for admin
@@ -107,6 +120,16 @@ export default function Admin() {
   // Analytics states (same as dashboard for consistency)
   const [analyticsDateFrom, setAnalyticsDateFrom] = useState(() => getNepalDateDaysAgo(30));
   const [analyticsDateTo, setAnalyticsDateTo] = useState(() => getNepalTodayString());
+
+  // Backup states
+  const [backupModalOpen, setBackupModalOpen] = useState(false);
+  const [restoreModalOpen, setRestoreModalOpen] = useState(false);
+  const [pendingRestore, setPendingRestore] = useState<BackupData | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Backup reminder hook
+  const { showReminder: showBackupReminder, daysSinceLastBackup } = useBackupReminder(currentUser?.role);
 
   const isDataLoaded = useStore(state => state.isDataLoaded);
 
@@ -2124,6 +2147,98 @@ export default function Admin() {
                     </div>
                   )}
                 </div>
+
+                {/* Database Backup & Restore */}
+                <div className="bg-card rounded-xl border border-border p-5">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Database className="w-5 h-5 text-primary" />
+                    Database Backup & Restore
+                  </h3>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Export your data to a backup file or restore from a previous backup. 
+                      We recommend backing up weekly to avoid data loss.
+                    </p>
+                    
+                    {/* Last backup info */}
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <HardDrive className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Last backup:</span>
+                        <span className="font-medium">
+                          {getLastBackupDate() || 'Never'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          const storeState = {
+                            categories,
+                            menuItems,
+                            orders,
+                            bills,
+                            transactions,
+                            customers,
+                            staff,
+                            expenses,
+                            waiterCalls,
+                            inventory: inventoryItems,
+                            settings,
+                          };
+                          exportDatabase(storeState, settings.restaurantName || 'Sajilo-Orders');
+                          toast.success('Backup downloaded successfully!');
+                        }}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Export Backup
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Import Backup
+                      </Button>
+                      
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".json"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          const result = await parseBackupFile(file);
+                          if (!result.success) {
+                            toast.error(result.error || 'Failed to parse backup file');
+                            return;
+                          }
+                          
+                          setPendingRestore(result.data!);
+                          setRestoreModalOpen(true);
+                          e.target.value = ''; // Reset input
+                        }}
+                      />
+                    </div>
+                    
+                    <div className="pt-3 border-t border-border">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-warning mt-0.5" />
+                        <p className="text-xs text-muted-foreground">
+                          <strong>Warning:</strong> Restoring from a backup will replace all current data. 
+                          Make sure to export a backup of your current data before restoring.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -2751,6 +2866,179 @@ export default function Admin() {
             <Button variant="outline" onClick={() => setStaffModal({ open: false, editing: null })}>Cancel</Button>
             <Button onClick={staffModal.editing ? handleUpdateStaff : handleAddStaff} className="gradient-primary">
               {staffModal.editing ? 'Save' : 'Add'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Restore Confirmation Modal */}
+      <Dialog open={restoreModalOpen} onOpenChange={setRestoreModalOpen}>
+        <DialogContent className="max-w-md w-[calc(100%-2rem)] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-warning" />
+              Restore from Backup
+            </DialogTitle>
+          </DialogHeader>
+          
+          {pendingRestore && (
+            <div className="space-y-4">
+              <div className="bg-muted rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Restaurant:</span>
+                  <span className="font-medium">{pendingRestore.restaurantName}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Backup Date:</span>
+                  <span className="font-medium">{formatNepalDateTime(pendingRestore.createdAt)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Version:</span>
+                  <span className="font-medium">{pendingRestore.version}</span>
+                </div>
+              </div>
+              
+              <div className="bg-muted rounded-lg p-4">
+                <h4 className="font-medium mb-2">Backup Contents:</h4>
+                {(() => {
+                  const stats = getBackupStats(pendingRestore);
+                  return (
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>Categories: <b>{stats.categories}</b></div>
+                      <div>Menu Items: <b>{stats.menuItems}</b></div>
+                      <div>Transactions: <b>{stats.transactions}</b></div>
+                      <div>Customers: <b>{stats.customers}</b></div>
+                      <div>Staff: <b>{stats.staff}</b></div>
+                    </div>
+                  );
+                })()}
+              </div>
+              
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                <p className="text-sm text-destructive font-medium">
+                  ⚠️ This will replace ALL your current data with the backup data. This action cannot be undone!
+                </p>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setRestoreModalOpen(false);
+                setPendingRestore(null);
+              }}
+              disabled={isRestoring}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              disabled={isRestoring}
+              onClick={async () => {
+                if (!pendingRestore) return;
+                
+                setIsRestoring(true);
+                try {
+                  // Restore all data
+                  const data = pendingRestore.data;
+                  
+                  if (data.categories) setCategories(data.categories);
+                  if (data.menuItems) setMenuItems(data.menuItems);
+                  if (data.orders) setOrders(data.orders);
+                  if (data.bills) setBills(data.bills);
+                  if (data.transactions) setTransactions(data.transactions);
+                  if (data.customers) setCustomers(data.customers);
+                  if (data.staff) setStaff(data.staff);
+                  if (data.expenses) setExpenses(data.expenses);
+                  if (data.waiterCalls) setWaiterCalls(data.waiterCalls);
+                  if (data.inventory) setInventoryItems(data.inventory);
+                  if (data.settings) updateSettings(data.settings);
+                  
+                  toast.success('Data restored successfully! Please refresh the page.');
+                  setRestoreModalOpen(false);
+                  setPendingRestore(null);
+                } catch (error) {
+                  toast.error('Failed to restore backup');
+                  console.error('Restore error:', error);
+                } finally {
+                  setIsRestoring(false);
+                }
+              }}
+            >
+              {isRestoring ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Restoring...
+                </>
+              ) : (
+                'Restore Backup'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Weekly Backup Reminder Modal */}
+      <Dialog open={showBackupReminder} onOpenChange={() => dismissBackupReminder()}>
+        <DialogContent className="max-w-md w-[calc(100%-2rem)]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Database className="w-5 h-5 text-warning" />
+              Weekly Backup Reminder
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+              <p className="text-sm">
+                {daysSinceLastBackup === null 
+                  ? "You haven't created a backup yet!"
+                  : `It's been ${daysSinceLastBackup} days since your last backup.`
+                }
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Regular backups protect your data from accidental loss. We recommend backing up at least once a week.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                dismissBackupReminder();
+                window.location.reload();
+              }}
+              className="w-full sm:w-auto"
+            >
+              Remind Me Later
+            </Button>
+            <Button 
+              onClick={() => {
+                const storeState = {
+                  categories,
+                  menuItems,
+                  orders,
+                  bills,
+                  transactions,
+                  customers,
+                  staff,
+                  expenses,
+                  waiterCalls,
+                  inventory: inventoryItems,
+                  settings,
+                };
+                exportDatabase(storeState, settings.restaurantName || 'Sajilo-Orders');
+                dismissBackupReminder();
+                toast.success('Backup downloaded successfully!');
+                window.location.reload();
+              }}
+              className="w-full sm:w-auto gradient-primary"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download Backup Now
             </Button>
           </DialogFooter>
         </DialogContent>

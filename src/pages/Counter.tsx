@@ -38,6 +38,9 @@ import { CashRegister } from '@/components/CashRegister';
 import { closeTableSession } from '@/lib/sessionManager';
 import { recordPaymentBlocksForPhones } from '@/lib/paymentBlockApi';
 import { LowStockAlert } from '@/components/LowStockAlert';
+import { useBackupReminder } from '@/hooks/useBackupReminder';
+import { exportDatabase, dismissBackupReminder } from '@/lib/databaseBackup';
+import { Database, Download } from 'lucide-react';
 
 // Order age thresholds (in seconds) for timer coloring
 const AGE_WARNING = 300; // 5 minutes - yellow
@@ -100,8 +103,13 @@ export default function Counter() {
     currentUser,
     logout,
     settings,
-    getCustomerPoints
+    getCustomerPoints,
+    // For backup
+    categories, menuItems, staff, inventoryItems
   } = useStore();
+  
+  // Backup reminder hook
+  const { showReminder: showBackupReminder, daysSinceLastBackup } = useBackupReminder(currentUser?.role);
 
   const [activeTab, setActiveTab] = useState<'active' | 'accepted' | 'history' | 'expenses'>('active');
   const [searchInput, setSearchInput] = useState('');
@@ -1708,6 +1716,70 @@ export default function Counter() {
         cashPayments={cashRegisterData.cashPayments}
         fonepayPayments={cashRegisterData.fonepayPayments}
       />
+
+      {/* Weekly Backup Reminder Modal */}
+      <Dialog open={showBackupReminder} onOpenChange={() => dismissBackupReminder()}>
+        <DialogContent className="max-w-md w-[calc(100%-2rem)]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Database className="w-5 h-5 text-warning" />
+              Weekly Backup Reminder
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+              <p className="text-sm">
+                {daysSinceLastBackup === null 
+                  ? "You haven't created a backup yet!"
+                  : `It's been ${daysSinceLastBackup} days since your last backup.`
+                }
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Regular backups protect your data from accidental loss. We recommend backing up at least once a week.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                dismissBackupReminder();
+                window.location.reload();
+              }}
+              className="w-full sm:w-auto"
+            >
+              Remind Me Later
+            </Button>
+            <Button 
+              onClick={() => {
+                const storeState = {
+                  categories,
+                  menuItems,
+                  orders,
+                  bills,
+                  transactions,
+                  customers,
+                  staff,
+                  expenses,
+                  waiterCalls,
+                  inventory: inventoryItems,
+                  settings,
+                };
+                exportDatabase(storeState, settings.restaurantName || 'Sajilo-Orders');
+                dismissBackupReminder();
+                toast.success('Backup downloaded successfully!');
+                window.location.reload();
+              }}
+              className="w-full sm:w-auto bg-foreground text-background hover:bg-foreground/90"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download Backup Now
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
