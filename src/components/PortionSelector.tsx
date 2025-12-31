@@ -18,26 +18,21 @@ export function PortionSelector({ item, open, onClose, onSelect }: PortionSelect
   const category = categories.find(c => c.name === item.category);
   const invCat = inventoryCategories.find(ic => ic.categoryId === category?.id);
   
-  // Get price for portion - priority: item-specific > category default > multiplier calculation
-  const getPortionPrice = (portion: PortionOption): number => {
-    // First, check for item-specific price
+  // Get price for portion - returns null if no price set (item should be hidden from customers)
+  const getPortionPrice = (portion: PortionOption): number | null => {
+    // Check for item-specific price - this is the only valid price source
     const itemPrice = getItemPortionPrice(item.id, portion.id);
     if (itemPrice != null) {
       return itemPrice;
     }
-    
-    // Fallback to category-level fixed price
-    if (portion.fixedPrice != null) {
-      return portion.fixedPrice;
-    }
-    
-    // Last resort: multiplier-based calculation
-    const baseMultiplier = Math.min(...portions.map(p => p.priceMultiplier));
-    const baseUnitPrice = item.price / baseMultiplier;
-    return Math.round(baseUnitPrice * portion.priceMultiplier);
+    // No price set - return null to indicate this portion should be hidden
+    return null;
   };
+  
+  // Filter out portions without prices
+  const portionsWithPrices = portions.filter(p => getPortionPrice(p) !== null);
 
-  if (portions.length === 0) return null;
+  if (portionsWithPrices.length === 0) return null;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -53,10 +48,10 @@ export function PortionSelector({ item, open, onClose, onSelect }: PortionSelect
         </DialogHeader>
         
         <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto">
-          {portions
+          {portionsWithPrices
             .sort((a, b) => a.sortOrder - b.sortOrder)
             .map(portion => {
-              const price = getPortionPrice(portion);
+              const price = getPortionPrice(portion)!;
               return (
                 <button
                   key={portion.id}
