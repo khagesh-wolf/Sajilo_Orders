@@ -28,12 +28,15 @@ const DEFAULT_PORTIONS: Record<string, { name: string; size: number; multiplier:
     { name: '180ml (QTR)', size: 180, multiplier: 2.8 },
     { name: '375ml (Half)', size: 375, multiplier: 5.5 },
     { name: '750ml (Full)', size: 750, multiplier: 10 },
+    { name: '1000ml', size: 1000, multiplier: 13.3 },
   ],
   pcs: [
     { name: '1 Piece', size: 1, multiplier: 1 },
     { name: 'Pack (20)', size: 20, multiplier: 18 },
   ],
 };
+
+const DEFAULT_BOTTLE_SIZES = [180, 375, 750, 1000];
 
 export function InventoryManager() {
   const { 
@@ -47,13 +50,17 @@ export function InventoryManager() {
   const [showAddStockModal, setShowAddStockModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedUnit, setSelectedUnit] = useState<InventoryUnitType>('pcs');
-  const [containerSize, setContainerSize] = useState('750');
   const [lowStockThreshold, setLowStockThreshold] = useState('5');
   
   const [stockMenuItemId, setStockMenuItemId] = useState('');
   const [stockQuantity, setStockQuantity] = useState('');
   const [stockNotes, setStockNotes] = useState('');
   const [priceEditorCategoryId, setPriceEditorCategoryId] = useState<string | null>(null);
+  
+  // Bottle-based stock entry
+  const [bottleCount, setBottleCount] = useState('');
+  const [bottleSize, setBottleSize] = useState('750');
+  const [customBottleSize, setCustomBottleSize] = useState('');
 
   // Categories with inventory tracking
   const trackedCategories = categories.filter(c => 
@@ -77,7 +84,6 @@ export function InventoryManager() {
     addInventoryCategory({
       categoryId: selectedCategory,
       unitType: selectedUnit,
-      defaultContainerSize: selectedUnit === 'ml' ? parseFloat(containerSize) : undefined,
       lowStockThreshold: parseFloat(lowStockThreshold),
     });
 
@@ -102,7 +108,7 @@ export function InventoryManager() {
       addInventoryItem({
         menuItemId: item.id,
         currentStock: 0,
-        containerSize: selectedUnit === 'ml' ? parseFloat(containerSize) : undefined,
+        defaultBottleSize: selectedUnit === 'ml' ? 750 : undefined,
         unit: selectedUnit,
         lowStockThreshold: parseFloat(lowStockThreshold),
       });
@@ -114,7 +120,7 @@ export function InventoryManager() {
   };
 
   const handleAddStock = () => {
-    if (!stockMenuItemId || !stockQuantity) {
+    if (!stockMenuItemId || (!stockQuantity && !bottleCount)) {
       toast.error('Select item and enter quantity');
       return;
     }
@@ -125,11 +131,30 @@ export function InventoryManager() {
       return;
     }
 
-    addStock(stockMenuItemId, parseFloat(stockQuantity), invItem.unit, stockNotes);
+    // Calculate total quantity
+    let totalQuantity = 0;
+    if (bottleCount && bottleSize) {
+      const size = bottleSize === 'custom' ? parseFloat(customBottleSize) : parseFloat(bottleSize);
+      totalQuantity = parseFloat(bottleCount) * size;
+    } else if (stockQuantity) {
+      totalQuantity = parseFloat(stockQuantity);
+    }
+    
+    if (totalQuantity <= 0) {
+      toast.error('Enter a valid quantity');
+      return;
+    }
+
+    const notes = bottleCount ? `${bottleCount} bottles × ${bottleSize === 'custom' ? customBottleSize : bottleSize}ml` + (stockNotes ? ` - ${stockNotes}` : '') : stockNotes;
+    
+    addStock(stockMenuItemId, totalQuantity, invItem.unit, notes);
     toast.success('Stock added successfully');
     setShowAddStockModal(false);
     setStockMenuItemId('');
     setStockQuantity('');
+    setBottleCount('');
+    setBottleSize('750');
+    setCustomBottleSize('');
     setStockNotes('');
   };
 
@@ -383,12 +408,6 @@ export function InventoryManager() {
                 </SelectContent>
               </Select>
             </div>
-            {selectedUnit === 'ml' && (
-              <div>
-                <label className="text-sm font-medium">Default Container Size (ml)</label>
-                <Input type="number" value={containerSize} onChange={e => setContainerSize(e.target.value)} />
-              </div>
-            )}
             <div>
               <label className="text-sm font-medium">Low Stock Threshold</label>
               <Input type="number" value={lowStockThreshold} onChange={e => setLowStockThreshold(e.target.value)} />
@@ -419,9 +438,61 @@ export function InventoryManager() {
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* Bottle-based entry for ml items */}
+            {inventoryItems.find(i => i.menuItemId === stockMenuItemId)?.unit === 'ml' && (
+              <div className="p-3 rounded-lg bg-muted/50 space-y-3">
+                <label className="text-sm font-medium">Quick Entry: Bottles</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground">Number of Bottles</label>
+                    <Input 
+                      type="number" 
+                      value={bottleCount} 
+                      onChange={e => setBottleCount(e.target.value)} 
+                      placeholder="e.g., 3"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Bottle Size (ml)</label>
+                    <Select value={bottleSize} onValueChange={setBottleSize}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {DEFAULT_BOTTLE_SIZES.map(size => (
+                          <SelectItem key={size} value={size.toString()}>{size}ml</SelectItem>
+                        ))}
+                        <SelectItem value="custom">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {bottleSize === 'custom' && (
+                  <div>
+                    <label className="text-xs text-muted-foreground">Custom Size (ml)</label>
+                    <Input 
+                      type="number" 
+                      value={customBottleSize} 
+                      onChange={e => setCustomBottleSize(e.target.value)} 
+                      placeholder="Enter size"
+                    />
+                  </div>
+                )}
+                {bottleCount && bottleSize && (
+                  <div className="text-sm text-muted-foreground">
+                    Total: {parseFloat(bottleCount || '0') * (bottleSize === 'custom' ? parseFloat(customBottleSize || '0') : parseFloat(bottleSize))}ml
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">or enter manually</span></div>
+            </div>
+            
             <div>
               <label className="text-sm font-medium">
-                Quantity ({inventoryItems.find(i => i.menuItemId === stockMenuItemId)?.unit || 'units'})
+                Direct Quantity ({inventoryItems.find(i => i.menuItemId === stockMenuItemId)?.unit || 'units'})
               </label>
               <Input 
                 type="number" 

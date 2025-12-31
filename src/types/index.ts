@@ -163,7 +163,6 @@ export interface InventoryCategory {
   id: string;
   categoryId: string;
   unitType: InventoryUnitType;
-  defaultContainerSize?: number; // e.g., 750ml for a bottle
   lowStockThreshold: number;
   createdAt: string;
 }
@@ -172,7 +171,7 @@ export interface InventoryItem {
   id: string;
   menuItemId: string;
   currentStock: number;
-  containerSize?: number;
+  defaultBottleSize?: number; // Default bottle size in ml (e.g., 750ml)
   unit: InventoryUnitType;
   lowStockThreshold?: number;
   createdAt: string;
