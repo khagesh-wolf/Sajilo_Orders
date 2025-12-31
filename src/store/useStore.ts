@@ -20,6 +20,7 @@ import {
   ItemPortionPrice,
   LowStockItem,
   InventoryUnitType,
+  CashDrawerSession,
 } from '@/types';
 import { getNepalTimestamp, isToday } from '@/lib/nepalTime';
 import { 
@@ -160,6 +161,14 @@ interface StoreState extends AuthState {
   addExpense: (expense: Omit<Expense, 'id' | 'createdAt'>) => void;
   deleteExpense: (id: string) => void;
   getExpensesByDateRange: (start: string, end: string) => Expense[];
+
+  // Cash Drawer
+  cashDrawerSessions: CashDrawerSession[];
+  setCashDrawerSessions: (sessions: CashDrawerSession[]) => void;
+  openCashDrawer: (openingBalance: number, openedBy: string) => CashDrawerSession;
+  closeCashDrawer: (sessionId: string, closingBalance: number, closedBy: string, notes?: string) => void;
+  getCurrentCashDrawerSession: () => CashDrawerSession | undefined;
+  getCashDrawerSessionByDate: (date: string) => CashDrawerSession | undefined;
 
   // Waiter Calls
   waiterCalls: WaiterCall[];
@@ -774,11 +783,13 @@ export const useStore = create<StoreState>()((set, get) => ({
   setExpenses: (expenses) => set({ expenses }),
 
   addExpense: (expense) => {
-    const newExpense = { 
+    const newExpense: Expense = { 
       id: generateId(), 
       amount: expense.amount,
       description: expense.description || '',
       category: expense.category,
+      vendor: expense.vendor,
+      receiptNumber: expense.receiptNumber,
       createdAt: getNepalTimestamp(),
       createdBy: expense.createdBy || ''
     };
@@ -795,6 +806,94 @@ export const useStore = create<StoreState>()((set, get) => ({
     return get().expenses.filter(e => {
       const date = new Date(e.createdAt);
       return date >= new Date(start) && date <= new Date(end + 'T23:59:59');
+    });
+  },
+
+  // ===========================================
+  // CASH DRAWER MANAGEMENT
+  // ===========================================
+  cashDrawerSessions: JSON.parse(localStorage.getItem('sajilo_cash_drawer') || '[]'),
+  setCashDrawerSessions: (sessions) => {
+    localStorage.setItem('sajilo_cash_drawer', JSON.stringify(sessions));
+    set({ cashDrawerSessions: sessions });
+  },
+
+  openCashDrawer: (openingBalance, openedBy) => {
+    const existingOpen = get().cashDrawerSessions.find(s => s.status === 'open');
+    if (existingOpen) {
+      return existingOpen; // Return existing open session
+    }
+    
+    const newSession: CashDrawerSession = {
+      id: generateId(),
+      openingBalance,
+      openedAt: getNepalTimestamp(),
+      openedBy,
+      status: 'open'
+    };
+    const updated = [...get().cashDrawerSessions, newSession];
+    localStorage.setItem('sajilo_cash_drawer', JSON.stringify(updated));
+    set({ cashDrawerSessions: updated });
+    return newSession;
+  },
+
+  closeCashDrawer: (sessionId, closingBalance, closedBy, notes) => {
+    const sessions = get().cashDrawerSessions;
+    const session = sessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    // Calculate expected cash: opening + cash sales - cash expenses for that session period
+    const { transactions, expenses } = get();
+    const sessionStart = new Date(session.openedAt);
+    const sessionEnd = new Date();
+    
+    const cashSales = transactions
+      .filter(t => {
+        const paidAt = new Date(t.paidAt);
+        return paidAt >= sessionStart && paidAt <= sessionEnd && 
+          (t.paymentMethod === 'cash' || t.paymentMethod === 'split');
+      })
+      .reduce((sum, t) => {
+        if (t.paymentMethod === 'split' && t.splitDetails) {
+          return sum + t.splitDetails.cashAmount;
+        }
+        return sum + t.total;
+      }, 0);
+    
+    const cashExpenses = expenses
+      .filter(e => {
+        const createdAt = new Date(e.createdAt);
+        return createdAt >= sessionStart && createdAt <= sessionEnd;
+      })
+      .reduce((sum, e) => sum + e.amount, 0);
+    
+    const expectedCash = session.openingBalance + cashSales - cashExpenses;
+    const discrepancy = closingBalance - expectedCash;
+
+    const updatedSession: CashDrawerSession = {
+      ...session,
+      closingBalance,
+      expectedCash,
+      discrepancy,
+      closedAt: getNepalTimestamp(),
+      closedBy,
+      notes,
+      status: 'closed'
+    };
+
+    const updated = sessions.map(s => s.id === sessionId ? updatedSession : s);
+    localStorage.setItem('sajilo_cash_drawer', JSON.stringify(updated));
+    set({ cashDrawerSessions: updated });
+  },
+
+  getCurrentCashDrawerSession: () => {
+    return get().cashDrawerSessions.find(s => s.status === 'open');
+  },
+
+  getCashDrawerSessionByDate: (date) => {
+    return get().cashDrawerSessions.find(s => {
+      const sessionDate = s.openedAt.split('T')[0];
+      return sessionDate === date;
     });
   },
 

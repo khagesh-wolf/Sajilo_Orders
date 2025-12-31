@@ -148,13 +148,32 @@ export interface DashboardStats {
   activeTables: number;
 }
 
+export type ExpenseCategory = 'ingredients' | 'utilities' | 'salary' | 'maintenance' | 'rent' | 'marketing' | 'equipment' | 'other';
+
 export interface Expense {
   id: string;
   amount: number;
   description: string;
-  category: 'ingredients' | 'utilities' | 'salary' | 'maintenance' | 'other';
+  category: ExpenseCategory;
+  vendor?: string;
+  receiptNumber?: string;
   createdAt: string;
   createdBy: string;
+}
+
+// Cash Drawer / Daily Reconciliation
+export interface CashDrawerSession {
+  id: string;
+  openingBalance: number;
+  closingBalance?: number;
+  expectedCash?: number; // Opening + cash sales - cash expenses
+  discrepancy?: number; // Closing - Expected
+  openedAt: string;
+  closedAt?: string;
+  openedBy: string;
+  closedBy?: string;
+  notes?: string;
+  status: 'open' | 'closed';
 }
 
 export interface WaiterCall {

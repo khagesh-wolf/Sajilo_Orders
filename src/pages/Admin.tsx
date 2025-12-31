@@ -40,6 +40,7 @@ import {
 import { uploadToR2 } from '@/lib/r2Client';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { InventoryManager } from '@/components/InventoryManager';
+import { AccountingDashboard } from '@/components/AccountingDashboard';
 import { 
   exportDatabase, 
   parseBackupFile, 
@@ -660,6 +661,7 @@ export default function Admin() {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'accounting', label: 'Accounting', icon: DollarSign },
     { id: 'menu', label: 'Menu', icon: UtensilsCrossed },
     { id: 'inventory', label: 'Inventory', icon: Package },
     { id: 'customers', label: 'Customers', icon: Users },
@@ -1146,6 +1148,11 @@ export default function Admin() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Accounting */}
+        {tab === 'accounting' && (
+          <AccountingDashboard currentUser={currentUser} />
         )}
 
         {/* Menu */}
