@@ -312,20 +312,20 @@ export function AccountingDashboard({ currentUser }: AccountingDashboardProps) {
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal text-sm",
-                    !dateFrom && "text-muted-foreground"
+                    !dateTo && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateFrom ? format(parse(dateFrom, 'yyyy-MM-dd', new Date()), 'PPP') : <span>Pick a date</span>}
+                  {dateTo ? format(parse(dateTo, 'yyyy-MM-dd', new Date()), 'PPP') : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 bg-popover" align="start">
                 <CalendarComponent
                   mode="single"
-                  selected={dateFrom ? parse(dateFrom, 'yyyy-MM-dd', new Date()) : undefined}
+                  selected={dateTo ? parse(dateTo, 'yyyy-MM-dd', new Date()) : undefined}
                   onSelect={(date) => { 
                     if (date) {
-                      setDateFrom(format(date, 'yyyy-MM-dd')); 
+                      setDateTo(format(date, 'yyyy-MM-dd')); 
                       setDatePreset('custom'); 
                     }
                   }}
@@ -343,20 +343,20 @@ export function AccountingDashboard({ currentUser }: AccountingDashboardProps) {
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal text-sm",
-                    !dateTo && "text-muted-foreground"
+                    !dateFrom && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateTo ? format(parse(dateTo, 'yyyy-MM-dd', new Date()), 'PPP') : <span>Pick a date</span>}
+                  {dateFrom ? format(parse(dateFrom, 'yyyy-MM-dd', new Date()), 'PPP') : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 bg-popover" align="end">
                 <CalendarComponent
                   mode="single"
-                  selected={dateTo ? parse(dateTo, 'yyyy-MM-dd', new Date()) : undefined}
+                  selected={dateFrom ? parse(dateFrom, 'yyyy-MM-dd', new Date()) : undefined}
                   onSelect={(date) => { 
                     if (date) {
-                      setDateTo(format(date, 'yyyy-MM-dd')); 
+                      setDateFrom(format(date, 'yyyy-MM-dd')); 
                       setDatePreset('custom'); 
                     }
                   }}
