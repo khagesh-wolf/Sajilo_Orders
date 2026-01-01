@@ -148,10 +148,21 @@ export function DataProvider({ children }: DataProviderProps) {
     const ordersPollTimerRef = { current: null as ReturnType<typeof setInterval> | null };
     const hasShownPollingToastRef = { current: false };
 
+    // If a channel never reaches SUBSCRIBED (common when WebSockets are blocked),
+    // start polling automatically instead of requiring a manual page refresh.
+    const realtimeWatchdogRef = { current: null as ReturnType<typeof setTimeout> | null };
+
     const clearReconnectTimer = () => {
       if (reconnectTimerRef.current) {
         clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = null;
+      }
+    };
+
+    const clearRealtimeWatchdog = () => {
+      if (realtimeWatchdogRef.current) {
+        clearTimeout(realtimeWatchdogRef.current);
+        realtimeWatchdogRef.current = null;
       }
     };
 
@@ -189,6 +200,7 @@ export function DataProvider({ children }: DataProviderProps) {
       // When realtime is down, ensure counter still gets new customer orders.
       startOrdersPolling();
 
+      clearRealtimeWatchdog();
       clearReconnectTimer();
 
       // Exponential backoff (1s → 2s → 4s → 8s → 16s, max 20s)
@@ -211,6 +223,13 @@ export function DataProvider({ children }: DataProviderProps) {
     // IMPORTANT: Put all table listeners on a single channel to reduce connections.
     const setupRealtime = () => {
       clearReconnectTimer();
+      clearRealtimeWatchdog();
+
+      // If the channel never reaches SUBSCRIBED, fall back to polling (no manual refresh needed).
+      realtimeWatchdogRef.current = setTimeout(() => {
+        if (destroyed) return;
+        startOrdersPolling();
+      }, 6000);
 
       if (activeChannel) {
         supabase.removeChannel(activeChannel);
@@ -352,12 +371,13 @@ export function DataProvider({ children }: DataProviderProps) {
         .subscribe((status) => {
           console.log('[Realtime] Subscription status:', status);
 
-           if (status === 'SUBSCRIBED') {
-             reconnectAttemptRef.current = 0;
-             hasShownRealtimeToastRef.current = false;
-             stopOrdersPolling();
-             return;
-           }
+          if (status === 'SUBSCRIBED') {
+            reconnectAttemptRef.current = 0;
+            hasShownRealtimeToastRef.current = false;
+            clearRealtimeWatchdog();
+            stopOrdersPolling();
+            return;
+          }
 
           // Reconnect on known failure states
           if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
@@ -372,6 +392,7 @@ export function DataProvider({ children }: DataProviderProps) {
     return () => {
       destroyed = true;
       clearReconnectTimer();
+      clearRealtimeWatchdog();
       stopOrdersPolling();
 
       // Clear any pending debounce timers
