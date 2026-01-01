@@ -1,4 +1,4 @@
-# Deployment Guide: Cloudflare Pages + R2 + Supabase
+# Deployment Guide: Cloudflare Pages + R2 + Supabase Database
 
 This guide covers deploying the **Sajilo Orders POS** system with the optimal free-tier stack that can handle ~50,000+ monthly customers.
 
