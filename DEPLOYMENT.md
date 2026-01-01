@@ -2,6 +2,13 @@
 
 This guide covers deploying the **Sajilo Orders POS** system with the optimal free-tier stack that can handle ~50,000+ monthly customers.
 
+## Pre-Deployment Checklist:
+1. Change default credentials - Update admin/counter passwords in Admin → Staff
+2. Run the new column migration on your Supabase:
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS accepted_order_cancel_admin_only BOOLEAN DEFAULT false;
+3. Configure environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
+4. Test on real devices before going live
+
 ## Architecture Overview
                                     
                                     ```
