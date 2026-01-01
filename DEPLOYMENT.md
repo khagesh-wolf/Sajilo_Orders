@@ -3,27 +3,27 @@
 This guide covers deploying the **Sajilo Orders POS** system with the optimal free-tier stack that can handle ~50,000+ monthly customers.
 
 ## Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Your Customers                           │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────┐
-│              Cloudflare Pages (Frontend)                     │
-│              ✓ Unlimited bandwidth                           │
-│              ✓ Global CDN (300+ locations)                   │
-│              ✓ Automatic HTTPS                               │
-└───────────┬─────────────────────────────────┬───────────────┘
-            │                                 │
-┌───────────▼───────────┐     ┌───────────────▼───────────────┐
-│   Cloudflare R2       │     │        Supabase               │
-│   (Image Storage)     │     │   (Database + Realtime)       │
-│   ✓ 10GB bandwidth    │     │   ✓ 500MB database            │
-│   ✓ WebP optimization │     │   ✓ Realtime subscriptions    │
-│   ✓ Global caching    │     │   ✓ Unlimited API calls       │
-└───────────────────────┘     └───────────────────────────────┘
-```
+                                    
+                                    ```
+                                    ┌─────────────────────────────────────────────────────────────┐
+                                    │                    Your Customers                           │
+                                    └─────────────────────────┬───────────────────────────────────┘
+                                                              │
+                                    ┌─────────────────────────▼───────────────────────────────────┐
+                                    │              Cloudflare Pages (Frontend)                     │
+                                    │              ✓ Unlimited bandwidth                           │
+                                    │              ✓ Global CDN (300+ locations)                   │
+                                    │              ✓ Automatic HTTPS                               │
+                                    └───────────┬─────────────────────────────────┬───────────────┘
+                                                │                                 │
+                                    ┌───────────▼───────────┐     ┌───────────────▼───────────────┐
+                                    │   Cloudflare R2       │     │        Supabase               │
+                                    │   (Image Storage)     │     │   (Database + Realtime)       │
+                                    │   ✓ 10GB bandwidth    │     │   ✓ 500MB database            │
+                                    │   ✓ WebP optimization │     │   ✓ Realtime subscriptions    │
+                                    │   ✓ Global caching    │     │   ✓ Unlimited API calls       │
+                                    └───────────────────────┘     └───────────────────────────────┘
+                                    ```
 
 ## Free Tier Limits
 
