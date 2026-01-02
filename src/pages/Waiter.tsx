@@ -2,12 +2,13 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
 import { useDynamicManifest } from '@/hooks/useDynamicManifest';
-import { OrderItem, Order, MenuItem } from '@/types';
+import { OrderItem, Order, MenuItem, PortionOption } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { PortionSelector } from '@/components/PortionSelector';
 import { 
   LogOut, ChefHat, ShoppingCart, Plus, Minus, Search, 
   CheckCircle, Clock, Utensils, Bell, Table2, Send, 
@@ -29,7 +30,7 @@ export default function Waiter() {
     menuItems, categories, orders, settings, staff,
     isAuthenticated, currentUser, logout, loginWithPin,
     addWaiterOrder, getOrdersByWaiter, updateOrderStatus,
-    getInventoryByMenuItemId, inventoryItems
+    getInventoryByMenuItemId, inventoryItems, getPortionsByItem
   } = useStore();
 
   // PIN Login state
@@ -45,6 +46,7 @@ export default function Waiter() {
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmDialog, setConfirmDialog] = useState(false);
   const [cartPanelOpen, setCartPanelOpen] = useState(false);
+  const [portionSelectorItem, setPortionSelectorItem] = useState<MenuItem | null>(null);
 
   // Sound notification refs for ready orders
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -224,15 +226,32 @@ export default function Waiter() {
     return Math.floor(availableUnits);
   };
 
-  const handleAddToCart = (item: MenuItem) => {
+  const handleAddToCart = (item: MenuItem, portion?: PortionOption, customPrice?: number) => {
+    // Check if item has portions (inventory tracked with portions)
+    const portions = getPortionsByItem(item.id);
+    const portionsWithPrices = portions.filter(p => p.fixedPrice != null);
+    if (portionsWithPrices.length > 0 && !portion) {
+      // Show portion selector
+      setPortionSelectorItem(item);
+      return;
+    }
+    
     // Check stock availability before adding to cart
-    const availableStock = getAvailableStock(item.id);
+    const availableStock = getAvailableStock(item.id, portion?.size);
     if (availableStock !== null && availableStock <= 0) {
       toast.error(`${item.name} is out of stock`);
       return;
     }
     
-    const existing = cart.find(c => c.menuItemId === item.id);
+    // Create unique ID for cart item (includes portion if applicable)
+    const cartItemKey = portion 
+      ? `${item.id}-${portion.id}` 
+      : item.id;
+    
+    const price = customPrice ?? item.price;
+    const itemName = portion ? `${item.name} (${portion.name})` : item.name;
+    
+    const existing = cart.find(c => c.id === cartItemKey || (c.menuItemId === item.id && c.portionName === portion?.name));
     if (existing) {
       // Check if we can add one more
       if (availableStock !== null && availableStock < 1) {
@@ -241,18 +260,28 @@ export default function Waiter() {
         return;
       }
       setCart(cart.map(c => 
-        c.menuItemId === item.id ? { ...c, qty: c.qty + 1 } : c
+        (c.id === cartItemKey || (c.menuItemId === item.id && c.portionName === portion?.name))
+          ? { ...c, qty: c.qty + 1 } 
+          : c
       ));
     } else {
       setCart([...cart, {
-        id: Math.random().toString(36).substring(2, 11),
+        id: cartItemKey,
         menuItemId: item.id,
-        name: item.name,
-        price: item.price,
-        qty: 1
+        name: itemName,
+        price: price,
+        qty: 1,
+        portionSize: portion?.size,
+        portionName: portion?.name,
       }]);
     }
-    toast.success(`Added ${item.name}`);
+    toast.success(`Added ${itemName}`);
+  };
+
+  // Handle portion selection
+  const handlePortionSelect = (item: MenuItem, portion: PortionOption, price: number) => {
+    handleAddToCart(item, portion, price);
+    setPortionSelectorItem(null);
   };
 
   const handleRemoveFromCart = (itemId: string) => {
@@ -583,18 +612,20 @@ export default function Waiter() {
           <div className="flex-1 overflow-y-auto p-4">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {filteredMenu.map(item => {
-                const inCart = cart.find(c => c.menuItemId === item.id);
+                // Count total qty for this menu item (including all portions)
+                const itemsInCart = cart.filter(c => c.menuItemId === item.id);
+                const totalQtyInCart = itemsInCart.reduce((sum, c) => sum + c.qty, 0);
                 return (
                   <button
                     key={item.id}
                     onClick={() => handleAddToCart(item)}
                     className={`bg-card border rounded-xl p-3 text-left transition-all hover:shadow-lg hover:border-primary relative ${
-                      inCart ? 'border-primary ring-2 ring-primary/20' : 'border-border'
+                      totalQtyInCart > 0 ? 'border-primary ring-2 ring-primary/20' : 'border-border'
                     }`}
                   >
-                    {inCart && (
+                    {totalQtyInCart > 0 && (
                       <div className="absolute -top-2 -right-2 w-6 h-6 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
-                        {inCart.qty}
+                        {totalQtyInCart}
                       </div>
                     )}
                     <h3 className="font-medium text-sm mb-1 line-clamp-2">{item.name}</h3>
@@ -1001,6 +1032,27 @@ export default function Waiter() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Portion Selector Modal */}
+      {portionSelectorItem && (
+        <PortionSelector
+          item={portionSelectorItem}
+          open={!!portionSelectorItem}
+          onClose={() => setPortionSelectorItem(null)}
+          onSelect={handlePortionSelect}
+          existingCartQty={cart
+            .filter(c => c.menuItemId === portionSelectorItem.id && c.portionName)
+            .reduce((acc, c) => {
+              // Find portion ID from portion name
+              const portions = getPortionsByItem(portionSelectorItem.id);
+              const portion = portions.find(p => p.name === c.portionName);
+              if (portion) {
+                acc[portion.id] = (acc[portion.id] || 0) + c.qty;
+              }
+              return acc;
+            }, {} as Record<string, number>)}
+        />
+      )}
     </div>
   );
 }
